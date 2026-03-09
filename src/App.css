@@ -1,0 +1,60 @@
+.app {
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 8px 32px rgba(255, 105, 180, 0.1);
+}
+
+h1 {
+  color: #ff69b4;
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 28px;
+}
+
+.card {
+  background: #fff;
+  border: 2px solid #ffe4f0;
+  border-radius: 15px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.card h2 {
+  color: #ff69b4;
+  font-size: 20px;
+  margin-bottom: 15px;
+}
+
+button {
+  background: linear-gradient(135deg, #ff69b4, #ff85c1);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: transform 0.2s;
+}
+
+button:hover {
+  transform: scale(1.05);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input {
+  padding: 8px 12px;
+  border: 2px solid #ffe4f0;
+  border-radius: 10px;
+  font-size: 14px;
+  margin: 5px;
+}
+
+input:focus {
+  outline: none;
+  border-color: #ff69b4;
+}
