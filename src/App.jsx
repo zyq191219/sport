@@ -56,7 +56,7 @@ BMI: ${bmi}
 
   return (
     <div className="app">
-      <h1>💪 我的减肥计划表</h1>
+      <h1>💪 乐乐的减肥计划表</h1>
 
       {/* 个人信息卡片 */}
       <div className="card profile-card">
