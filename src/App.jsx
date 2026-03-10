@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import WeightTracker from './components/WeightTracker'
+import { marked } from 'marked'
 import './App.css'
 
 const API_KEY = 'sk-44084743-58aa-4fe0-834a-53f49494df40'
@@ -18,11 +19,12 @@ function setCookie(name, value) {
 export default function App() {
   const [records, setRecords] = useState(() => getCookie('records') || [])
   const [profile, setProfile] = useState(() => getCookie('profile') || { height: '158', currentWeight: '56', targetWeight: '53', age: '25' })
-  const [analysis, setAnalysis] = useState('')
+  const [analysis, setAnalysis] = useState(() => getCookie('analysis') || '')
   const [loading, setLoading] = useState(false)
 
   useEffect(() => { setCookie('records', records) }, [records])
   useEffect(() => { setCookie('profile', profile) }, [profile])
+  useEffect(() => { setCookie('analysis', analysis) }, [analysis])
 
   const handleAnalyze = async () => {
     if (!profile.height || !profile.currentWeight || !profile.targetWeight) {
@@ -31,6 +33,8 @@ export default function App() {
     }
 
     setLoading(true)
+    setAnalysis('')
+
     try {
       const bmi = (profile.currentWeight / ((profile.height / 100) ** 2)).toFixed(1)
       const weightDiff = profile.currentWeight - profile.targetWeight
@@ -61,15 +65,49 @@ BMI: ${bmi}
         },
         body: JSON.stringify({
           model: 'Claude-Sonnet-4.6',
-          messages: [{ role: 'user', content: prompt }]
+          messages: [{ role: 'user', content: prompt }],
+          stream: true
         })
       })
 
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.error?.message || '分析失败')
-      setAnalysis(data.choices[0]?.message?.content || '')
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error?.message || '分析失败')
+      }
+
+      // 流式读取响应
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6)
+            if (data === '[DONE]') continue
+
+            try {
+              const json = JSON.parse(data)
+              const content = json.choices[0]?.delta?.content || ''
+              if (content) {
+                setAnalysis(prev => prev + content)
+              }
+            } catch (e) {
+              console.error('解析流数据失败:', e)
+            }
+          }
+        }
+      }
     } catch (error) {
       alert('分析失败: ' + error.message)
+      setAnalysis('')
     } finally {
       setLoading(false)
     }
@@ -151,9 +189,7 @@ BMI: ${bmi}
       {analysis && (
         <div className="card plan-card">
           <h2>📝 您的专属减肥计划</h2>
-          <div className="analysis-result">
-            {analysis}
-          </div>
+          <div className="analysis-result" dangerouslySetInnerHTML={{ __html: marked(analysis) }} />
         </div>
       )}
 
