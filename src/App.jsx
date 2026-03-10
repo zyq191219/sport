@@ -1,13 +1,28 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import WeightTracker from './components/WeightTracker'
-import AIAnalysis from './components/AIAnalysis'
 import './App.css'
 
+const API_KEY = 'sk-44084743-58aa-4fe0-834a-53f49494df40'
+const API_URL = '/api-proxy/v1/chat/completions'
+
+function getCookie(name) {
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
+  return match ? JSON.parse(decodeURIComponent(match[2])) : null
+}
+
+function setCookie(name, value) {
+  const encoded = encodeURIComponent(JSON.stringify(value))
+  document.cookie = `${name}=${encoded}; max-age=${60 * 60 * 24 * 365}; path=/`
+}
+
 export default function App() {
-  const [records, setRecords] = useState([])
-  const [profile, setProfile] = useState({ height: '160', currentWeight: '56', targetWeight: '51', age: '25' })
+  const [records, setRecords] = useState(() => getCookie('records') || [])
+  const [profile, setProfile] = useState(() => getCookie('profile') || { height: '158', currentWeight: '56', targetWeight: '53', age: '25' })
   const [analysis, setAnalysis] = useState('')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => { setCookie('records', records) }, [records])
+  useEffect(() => { setCookie('profile', profile) }, [profile])
 
   const handleAnalyze = async () => {
     if (!profile.height || !profile.currentWeight || !profile.targetWeight) {
@@ -38,15 +53,21 @@ BMI: ${bmi}
 
 回复要专业、实用、充满正能量。`
 
-      const response = await fetch('http://localhost:3000/api/analyze', {
+      const response = await fetch(API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt })
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'Claude-Sonnet-4.6',
+          messages: [{ role: 'user', content: prompt }]
+        })
       })
 
       const data = await response.json()
-      if (!response.ok) throw new Error(data.error || '分析失败')
-      setAnalysis(data.text)
+      if (!response.ok) throw new Error(data.error?.message || '分析失败')
+      setAnalysis(data.choices[0]?.message?.content || '')
     } catch (error) {
       alert('分析失败: ' + error.message)
     } finally {

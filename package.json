@@ -3,9 +3,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"node server.js\" \"vite\"",
-    "build": "vite build",
-    "server": "node server.js"
+    "dev": "vite",
+    "build": "vite build"
   },
   "dependencies": {
     "react": "^18.3.1",
